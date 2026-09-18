@@ -48,6 +48,16 @@
             z-index: 2;
         }
 
+        /*
+            Popups live inside rows. Without lifting the hovered
+            row, later rows and the z-index:10 panels/buttons
+            paint on top of them.
+        */
+        .row:hover,
+        .row:focus-within {
+            z-index: 20;
+        }
+
 
         /* =========================
            TALENT NODES
@@ -75,10 +85,27 @@
                 0 0 0 2px rgba(0, 0, 0, 0.4),
                 0 2px 5px rgba(0, 0, 0, 0.8);
 
-            overflow: hidden;
+            overflow: visible;
 
             cursor: pointer;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .node::before {
+            content: "";
+
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+
+            border-radius: 50%;
+
+            background-image: var(--icon-url);
+            background-repeat: no-repeat;
+            background-position: var(--icon-pos);
+            background-size: var(--icon-size);
+
+            pointer-events: none;
         }
 
         .node.selected {
@@ -88,6 +115,112 @@
                 0 0 0 2px rgba(255, 53, 53, 0.55),
                 0 0 10px rgba(255, 53, 53, 0.85),
                 0 2px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        .node:hover,
+        .node:focus-visible {
+            z-index: 50;
+        }
+
+        .node:focus-visible {
+            outline: 2px solid #7fd4ff;
+            outline-offset: 2px;
+        }
+
+
+        /* =========================
+           NODE HOVER POPUP
+
+           Fill in the <div class="popup"> inside each node:
+           <h1> is the title (top left), extra elements below
+           are the body text. The talent icon is injected in
+           the top right automatically.
+           ========================= */
+
+        .popup {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            column-gap: 12px;
+            row-gap: 8px;
+
+            visibility: hidden;
+            opacity: 0;
+
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 12px);
+            z-index: 30;
+
+            width: max-content;
+            max-width: min(340px, calc(100vw - 24px));
+            height: auto;
+
+            padding: 12px 14px;
+
+            font-family: inherit;
+            color: #ddd;
+
+            background: linear-gradient(180deg, #333, #222);
+            border: 1px solid #555;
+            border-radius: 10px;
+
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+
+        .popup.below {
+            bottom: auto;
+            top: calc(100% + 12px);
+        }
+
+        .node:hover .popup,
+        .node:focus-visible .popup {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .popup h1 {
+            grid-column: 1;
+            grid-row: 1;
+
+            margin: 0;
+
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.25;
+            color: #fff;
+        }
+
+        .popup-icon {
+            grid-column: 2;
+            grid-row: 1;
+
+            width: 40px;
+            height: 40px;
+            flex: none;
+
+            border-radius: 50%;
+            border: 2px solid black;
+
+            background-color: #222;
+            background-repeat: no-repeat;
+
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+        }
+
+        .popup > :not(h1):not(.popup-icon) {
+            grid-column: 1 / -1;
+
+            margin: 0;
+
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.45;
+            color: #ddd;
+            white-space: pre-wrap;
         }
 
 
@@ -561,31 +694,55 @@
             <div class="node"
                  style="grid-column: 5"
                  data-icon="killShotHBea.png">
+                <div class="popup">
+                    <h1>Ranged</h1>
+                    <p>+1 to ranged attack rolls.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 7"
                  data-icon="mortalStrikeWArm.png">
+                <div class="popup">
+                    <h1>Melee</h1>
+                    <p>+1 to melee attack rolls.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 13"
                  data-icon="aurasOfTheResolutePRet.png">
+                <div class="popup">
+                    <h1>Defense</h1>
+                    <p>+1 to AC.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 15"
                  data-icon="blessingOfSpellwardingPPro.png">
+                <div class="popup">
+                    <h1>Fortitude</h1>
+                    <p>+1 to all saving throws.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 21"
                  data-icon="arcaneMissilesMArc.png">
+                <div class="popup">
+                    <h1>Spell attack</h1>
+                    <p>+1 to spell attacks.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 23"
                  data-icon="incantersFlowMFro.png">
+                <div class="popup">
+                    <h1>Spell save</h1>
+                    <p>+1 to spell saves.</p>
+                </div>
             </div>
 
         </div>
@@ -600,46 +757,82 @@
             <div class="node"
                  style="grid-column: 4"
                  data-icon="huntersAvoidanceHSur.png">
+                <div class="popup">
+                    <h1>Kite</h1>
+                    <p>+5 ft movement away from enemies.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 6"
                  data-icon="improvedVampiricBloodDBlo.png">
+                <div class="popup">
+                    <h1>Wound</h1>
+                    <p>+1 physical damage.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 8"
                  data-icon="posthasteHSur.png">
+                <div class="popup">
+                    <h1>Prowl</h1>
+                    <p>+10 ft movement towards enemies.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 12"
                  data-icon="shieldWallWPro.png">
+                <div class="popup">
+                    <h1>Dual shield</h1>
+                    <p>You can benefit from multiple shields at the same time.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 14"
                  data-icon="painSuppressionPDis.png">
+                <div class="popup">
+                    <h1>Shrug</h1>
+                    <p>+1 damage reduction.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 16"
                  data-icon="penitencePRet.png">
+                <div class="popup">
+                    <h1>Vigor</h1>
+                    <p>Roll your largest HD once and add it to your HP total.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 20"
                  data-icon="preciseShotsHMar.png">
+                <div class="popup">
+                    <h1>Spell sniper</h1>
+                    <p>Double the range of spells.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 22"
                  data-icon="havocWDes.png">
+                <div class="popup">
+                    <h1>Agonizing spells</h1>
+                    <p>+1 spell damage.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 24"
                  data-icon="trainOfThoughtPDis.png">
+                <div class="popup">
+                    <h1>Strong minded</h1>
+                    <p>+ 1 to concentration checks.</p>
+                </div>
             </div>
 
         </div>
@@ -654,61 +847,109 @@
             <div class="node"
                  style="grid-column: 3"
                  data-icon="unbreakableStrideRAss.png">
+                <div class="popup">
+                    <h1>Stagger</h1>
+                    <p>Ranged attacks slow enemies hit by 5 ft.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 5"
                  data-icon="unboundFreedomPRet.png">
+                <div class="popup">
+                    <h1>Enhanced Weaponry</h1>
+                    <p>All Weapons/Ammo counts as magical.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 7"
                  data-icon="raptorStrikeHSur.png">
+                <div class="popup">
+                    <h1>Dexterous Wielder</h1>
+                    <p>All weapons gain the finesse property.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 9"
                  data-icon="butcheryHSur.png">
+                <div class="popup">
+                    <h1>Iron grip</h1>
+                    <p>Versatile weapons use their highest die when wielded one-handed.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 11"
                  data-icon="shieldChargeWPro.png">
+                <div class="popup">
+                    <h1>Shield bash</h1>
+                    <p>If you are wielding a shield, you can use the shove action as a bonus action. Add the AC bonus from your shield to the Athletics check.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 13"
                  data-icon="blessedRecoveryPHol.png">
+                <div class="popup">
+                    <h1>Attack mitigation</h1>
+                    <p>+1 physical damage reduction.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 15"
                  data-icon="crystallineReflectionPHol.png">
+                <div class="popup">
+                    <h1>Spell mitigation</h1>
+                    <p>+1 magical damage reduction.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 17"
                  data-icon="sanctifiedPlatesPPro.png">
+                <div class="popup">
+                    <h1>Mithril casing</h1>
+                    <p>Ignore STR requirement for armor.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 19"
                  data-icon="windsOfAlakirSEle.png">
+                <div class="popup">
+                    <h1>Repelling spells</h1>
+                    <p>Spells knock creatures back 5 ft. Usable once per turn.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 21"
                  data-icon="arcingCleaveMArc.png">
+                <div class="popup">
+                    <h1>Twinned cantrips</h1>
+                    <p>Cantrips can target additional creature or point.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 23"
                  data-icon="plotTheFutureEAug.png">
+                <div class="popup">
+                    <h1>Extended spells</h1>
+                    <p>Double the duration of spells.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 25"
                  data-icon="divineServicePHol.png">
+                <div class="popup">
+                    <h1>Split mind</h1>
+                    <p>You can target an additional creature or point with concentraion spells.</p>
+                </div>
             </div>
 
         </div>
@@ -723,66 +964,118 @@
             <div class="node"
                  style="grid-column: 2"
                  data-icon="surgingShotsHMar.png">
+                <div class="popup">
+                    <h1>Surging Shots H Mar</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 4"
                  data-icon="masterMarksmanHMar.png">
+                <div class="popup">
+                    <h1>Master Marksman H Mar</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 6"
                  data-icon="battlelordWArm.png">
+                <div class="popup">
+                    <h1>Battlelord W Arm</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 8"
                  data-icon="championsMightWPro.png">
+                <div class="popup">
+                    <h1>Champions Might W Pro</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 10"
                  data-icon="punishWPro.png">
+                <div class="popup">
+                    <h1>Punish W Pro</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 12"
                  data-icon="evocationMArc.png">
+                <div class="popup">
+                    <h1>Evocation M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 14"
                  data-icon="divineAegisPDis.png">
+                <div class="popup">
+                    <h1>Divine Aegis P Dis</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 16"
                  data-icon="holyAegisPHol.png">
+                <div class="popup">
+                    <h1>Holy Aegis P Hol</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 18"
                  data-icon="accumulativeShieldingMFro.png">
+                <div class="popup">
+                    <h1>Accumulative Shielding M Fro</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 20"
                  data-icon="fireBlastMFir.png">
+                <div class="popup">
+                    <h1>Fire Blast M Fir</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 22"
                  data-icon="tomeOfRhoninMFir.png">
+                <div class="popup">
+                    <h1>Tome Of Rhonin M Fir</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 24"
                  data-icon="firestormEDev.png">
+                <div class="popup">
+                    <h1>Firestorm E Dev</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 26"
                  data-icon="darkEvangelismPSha.png">
+                <div class="popup">
+                    <h1>Dark Evangelism P Sha</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
         </div>
@@ -797,71 +1090,127 @@
             <div class="node"
                  style="grid-column: 1"
                  data-icon="crackShotHMar.png">
+                <div class="popup">
+                    <h1>Crack Shot H Mar</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 3"
                  data-icon="deathblowHMar.png">
+                <div class="popup">
+                    <h1>Deathblow H Mar</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 5"
                  data-icon="bladesOfLightPRet.png">
+                <div class="popup">
+                    <h1>Blades Of Light P Ret</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 7"
                  data-icon="renewingBlazeEDev.png">
+                <div class="popup">
+                    <h1>Renewing Blaze E Dev</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 9"
                  data-icon="acrobaticStrikesRAss.png">
+                <div class="popup">
+                    <h1>Acrobatic Strikes R Ass</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 11"
                  data-icon="multishotHMar.png">
+                <div class="popup">
+                    <h1>Multishot H Mar</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 13"
                  data-icon="timelessnessEAug.png">
+                <div class="popup">
+                    <h1>Timelessness E Aug</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 15"
                  data-icon="primordialFurySEle.png">
+                <div class="popup">
+                    <h1>Primordial Fury S Ele</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 17"
                  data-icon="unwaveringSpiritPHol.png">
+                <div class="popup">
+                    <h1>Unwavering Spirit P Hol</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 19"
                  data-icon="runicAttenuationDUnh.png">
+                <div class="popup">
+                    <h1>Runic Attenuation D Unh</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 21"
                  data-icon="alterTimeMArc.png">
+                <div class="popup">
+                    <h1>Alter Time M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 23"
                  data-icon="elementalBlastSEle.png">
+                <div class="popup">
+                    <h1>Elemental Blast S Ele</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 25"
                  data-icon="holyNovaPDis.png">
+                <div class="popup">
+                    <h1>Holy Nova P Dis</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 27"
                  data-icon="mindDevourerPSha.png">
+                <div class="popup">
+                    <h1>Mind Devourer P Sha</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
         </div>
@@ -876,66 +1225,118 @@
             <div class="node"
                  style="grid-column: 2"
                  data-icon="misdirectionHMar.png">
+                <div class="popup">
+                    <h1>Misdirection H Mar</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 4"
                  data-icon="skullsplitterWArm.png">
+                <div class="popup">
+                    <h1>Skullsplitter W Arm</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 6"
                  data-icon="gougeRAss.png">
+                <div class="popup">
+                    <h1>Gouge R Ass</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 8"
                  data-icon="peacefulMendingMMis.png">
+                <div class="popup">
+                    <h1>Peaceful Mending M Mis</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 10"
                  data-icon="bitterImmunityWFur.png">
+                <div class="popup">
+                    <h1>Bitter Immunity W Fur</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 12"
                  data-icon="ironfurDGua.png">
+                <div class="popup">
+                    <h1>Ironfur D Gua</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 14"
                  data-icon="championsBulwarkWPro.png">
+                <div class="popup">
+                    <h1>Champions Bulwark W Pro</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 16"
                  data-icon="elementalWardingSEle.png">
+                <div class="popup">
+                    <h1>Elemental Warding S Ele</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 18"
                  data-icon="mirrorImageMArc.png">
+                <div class="popup">
+                    <h1>Mirror Image M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 20"
                  data-icon="finalStandPPro.png">
+                <div class="popup">
+                    <h1>Final Stand P Pro</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 22"
                  data-icon="rollingHavocWDes.png">
+                <div class="popup">
+                    <h1>Rolling Havoc W Des</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 24"
                  data-icon="ancestralGuidanceSEle.png">
+                <div class="popup">
+                    <h1>Ancestral Guidance S Ele</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 26"
                  data-icon="illuminatedThoughtsMArc.png">
+                <div class="popup">
+                    <h1>Illuminated Thoughts M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
         </div>
@@ -950,51 +1351,91 @@
             <div class="node"
                  style="grid-column: 3"
                  data-icon="boundingStrideWFur.png">
+                <div class="popup">
+                    <h1>Bounding Stride W Fur</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 5"
                  data-icon="judgmentOfJusticePRet.png">
+                <div class="popup">
+                    <h1>Judgment Of Justice P Ret</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 7"
                  data-icon="overwhelmingRageWFur.png">
+                <div class="popup">
+                    <h1>Overwhelming Rage W Fur</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 10"
                  data-icon="juggernautWArm.png">
+                <div class="popup">
+                    <h1>Juggernaut W Arm</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 13"
                  data-icon="reinforcedPlatesWPro.png">
+                <div class="popup">
+                    <h1>Reinforced Plates W Pro</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 15"
                  data-icon="greaterInvisibilityMArc.png">
+                <div class="popup">
+                    <h1>Greater Invisibility M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 18"
                  data-icon="unbreakableSpiritPHol.png">
+                <div class="popup">
+                    <h1>Unbreakable Spirit P Hol</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 21"
                  data-icon="elunesGuidanceDBal.png">
+                <div class="popup">
+                    <h1>Elunes Guidance D Bal</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 23"
                  data-icon="mindFreezeDBlo.png">
+                <div class="popup">
+                    <h1>Mind Freeze D Blo</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 25"
                  data-icon="chaosbringerWDes.png">
+                <div class="popup">
+                    <h1>Chaosbringer W Des</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
         </div>
@@ -1009,26 +1450,46 @@
             <div class="node"
                  style="grid-column: 4"
                  data-icon="hydrasBiteHMar.png">
+                <div class="popup">
+                    <h1>Hydras Bite H Mar</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 6"
                  data-icon="improvedBackstabRSub.png">
+                <div class="popup">
+                    <h1>Improved Backstab R Sub</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 14"
                  data-icon="naturalRecoveryDGua.png">
+                <div class="popup">
+                    <h1>Natural Recovery D Gua</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 22"
                  data-icon="impetusMArc.png">
+                <div class="popup">
+                    <h1>Impetus M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 24"
                  data-icon="masterOfTimeMArc.png">
+                <div class="popup">
+                    <h1>Master Of Time M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
         </div>
@@ -1043,16 +1504,28 @@
             <div class="node"
                  style="grid-column: 5"
                  data-icon="warMachineWArm.png">
+                <div class="popup">
+                    <h1>War Machine W Arm</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 14"
                  data-icon="twinGuardianEAug.png">
+                <div class="popup">
+                    <h1>Twin Guardian E Aug</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
             <div class="node"
                  style="grid-column: 23"
                  data-icon="slipstreamMArc.png">
+                <div class="popup">
+                    <h1>Slipstream M Arc</h1>
+                    <p>Description.</p>
+                </div>
             </div>
 
         </div>
@@ -1144,14 +1617,121 @@
                     const col = position[0];
                     const row = position[1];
 
-                    node.style.backgroundImage =
-                        `url("${ICON_ATLAS_DATA_URL}")`;
+                    node.style.setProperty(
+                        "--icon-url",
+                        `url("${ICON_ATLAS_DATA_URL}")`
+                    );
 
-                    node.style.backgroundSize =
-                        backgroundSize;
+                    node.style.setProperty(
+                        "--icon-size",
+                        backgroundSize
+                    );
 
-                    node.style.backgroundPosition =
-                        `-${col * displaySize}px -${row * displaySize}px`;
+                    node.style.setProperty(
+                        "--icon-pos",
+                        `-${col * displaySize}px -${row * displaySize}px`
+                    );
+
+                });
+
+        }
+
+
+        function placePopup(node, popup) {
+
+            popup.classList.remove("below");
+            popup.style.transform = "translateX(-50%)";
+
+            const margin = 8;
+            const rect =
+                popup.getBoundingClientRect();
+
+            if (rect.top < margin) {
+                popup.classList.add("below");
+            }
+
+            const shifted =
+                popup.getBoundingClientRect();
+
+            let shiftX = 0;
+
+            if (shifted.left < margin) {
+                shiftX = margin - shifted.left;
+            } else if (shifted.right > window.innerWidth - margin) {
+                shiftX = (window.innerWidth - margin) - shifted.right;
+            }
+
+            popup.style.transform =
+                "translateX(calc(-50% + " + shiftX + "px))";
+
+        }
+
+
+        function initPopups() {
+
+            const popupIconSize = 40;
+
+            const popupBackgroundSize =
+                (ICON_ATLAS_COLS * popupIconSize) + "px " +
+                (ICON_ATLAS_ROWS * popupIconSize) + "px";
+
+            document
+                .querySelectorAll(".node")
+                .forEach(node => {
+
+                    node.setAttribute("tabindex", "0");
+
+                    const popup =
+                        node.querySelector(".popup");
+
+                    if (!popup) {
+                        return;
+                    }
+
+                    let iconEl =
+                        popup.querySelector(".popup-icon");
+
+                    if (!iconEl) {
+
+                        iconEl = document.createElement("div");
+                        iconEl.className = "popup-icon";
+                        iconEl.setAttribute("aria-hidden", "true");
+
+                        const heading =
+                            popup.querySelector("h1");
+
+                        if (heading) {
+                            heading.insertAdjacentElement("afterend", iconEl);
+                        } else {
+                            popup.prepend(iconEl);
+                        }
+
+                    }
+
+                    const filename =
+                        node.dataset.icon;
+
+                    const position =
+                        filename && ICON_POSITIONS[filename];
+
+                    if (position) {
+
+                        iconEl.style.backgroundImage =
+                            `url("${ICON_ATLAS_DATA_URL}")`;
+
+                        iconEl.style.backgroundSize =
+                            popupBackgroundSize;
+
+                        iconEl.style.backgroundPosition =
+                            `-${position[0] * popupIconSize}px ` +
+                            `-${position[1] * popupIconSize}px`;
+
+                    }
+
+                    const show = () => placePopup(node, popup);
+
+                    node.addEventListener("mouseenter", show);
+                    node.addEventListener("focus", show);
 
                 });
 
@@ -2229,6 +2809,7 @@
            ========================================================= */
 
         applyIcons();
+        initPopups();
         initSelection();
 
 
