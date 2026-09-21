@@ -3,6 +3,22 @@
 
 <head>
     <meta charset="UTF-8">
+
+    <!-- Mobile: render at device width instead of a shrunk ~980px desktop
+         layout. viewport-fit=cover lets the app use the full screen on
+         notched phones; interactive-widget keeps the layout stable when the
+         on-screen keyboard opens for the number inputs. -->
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+
+    <!-- "Add to Home Screen" launches fullscreen with no browser chrome,
+         giving a native app feel without an app store (iOS + Android). -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Talent Tree">
+    <meta name="theme-color" content="#222222">
+
     <title>Talent Tree</title>
 
     <style>
@@ -46,6 +62,18 @@
 
             position: relative;
             z-index: 2;
+
+            /*
+                A row spans the full width, so its empty cells would
+                otherwise sit on top of the absolutely-positioned
+                buttons/panels whenever the row is lifted to z-index
+                20 on hover - swallowing their clicks. Disabling
+                pointer events on the row (and re-enabling them on the
+                nodes) lets clicks in empty areas fall through to the
+                controls beneath, while :hover / :focus-within still
+                resolve through the node up to the row.
+            */
+            pointer-events: none;
         }
 
         /*
@@ -88,6 +116,7 @@
             overflow: visible;
 
             cursor: pointer;
+            pointer-events: auto;
             transition: border-color 0.15s ease, box-shadow 0.15s ease;
         }
 
@@ -260,6 +289,65 @@
         .reset-toggle:hover {
             background: linear-gradient(180deg, #464646, #303030);
             border-color: #777;
+        }
+
+        /* Fullscreen toggle: fixed to the viewport corner so it never
+           collides with the absolutely-positioned tree controls, and stays
+           reachable while scrolling on a phone. Sits above everything and
+           respects notch insets via safe-area padding. */
+        .fullscreen-toggle {
+            position: fixed;
+            z-index: 100;
+            bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            right: calc(16px + env(safe-area-inset-right, 0px));
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+
+            width: 48px;
+            height: 48px;
+            padding: 0;
+
+            font-family: inherit;
+            font-size: 20px;
+            line-height: 1;
+            color: #ddd;
+
+            background: linear-gradient(180deg, #3a3a3a, #262626);
+            border: 1px solid #555;
+            border-radius: 50%;
+
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+            transition: all 0.15s ease;
+
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .fullscreen-toggle:hover {
+            background: linear-gradient(180deg, #464646, #303030);
+            border-color: #777;
+        }
+
+        .fullscreen-toggle:active {
+            transform: scale(0.94);
+        }
+
+        /* Once fullscreen (or launched from the home screen in standalone
+           mode) the button flips to an "exit" affordance. */
+        .fullscreen-toggle .icon-exit {
+            display: none;
+        }
+
+        .fullscreen-toggle.is-fullscreen .icon-enter {
+            display: none;
+        }
+
+        .fullscreen-toggle.is-fullscreen .icon-exit {
+            display: inline;
         }
 
         .expert-toggle.active {
@@ -573,6 +661,12 @@
 
 
 <body>
+
+    <button id="fullscreenToggle" class="fullscreen-toggle" type="button"
+        aria-label="Toggle fullscreen" title="Toggle fullscreen">
+        <span class="icon-enter" aria-hidden="true">&#9974;</span>
+        <span class="icon-exit" aria-hidden="true">&#10005;</span>
+    </button>
 
     <div class="talent-tree">
 
@@ -2861,6 +2955,92 @@
                 });
 
             observer.observe(tree);
+
+        }
+
+
+        /* =========================
+           FULLSCREEN TOGGLE
+
+           Fullscreen API works on Android Chrome and desktop. iOS Safari
+           doesn't expose it, so on iOS the button is hidden and the user
+           gets fullscreen by adding the page to the home screen instead
+           (the web-app-capable meta tags handle that). We also hide the
+           button entirely when already launched in standalone mode.
+           ========================= */
+
+        const fullscreenToggle =
+            document.getElementById("fullscreenToggle");
+
+
+        if (fullscreenToggle) {
+
+            const fullscreenSupported =
+                document.documentElement.requestFullscreen ||
+                document.documentElement.webkitRequestFullscreen;
+
+            const launchedStandalone =
+                window.matchMedia("(display-mode: standalone)").matches ||
+                window.navigator.standalone === true;
+
+
+            if (!fullscreenSupported || launchedStandalone) {
+
+                fullscreenToggle.style.display = "none";
+
+            } else {
+
+                const syncFullscreenState = () => {
+
+                    const active =
+                        document.fullscreenElement ||
+                        document.webkitFullscreenElement;
+
+                    fullscreenToggle.classList.toggle(
+                        "is-fullscreen",
+                        Boolean(active)
+                    );
+
+                };
+
+
+                fullscreenToggle.addEventListener("click", () => {
+
+                    const active =
+                        document.fullscreenElement ||
+                        document.webkitFullscreenElement;
+
+                    if (!active) {
+
+                        const el = document.documentElement;
+
+                        (el.requestFullscreen ||
+                            el.webkitRequestFullscreen)
+                            .call(el)
+                            .catch(() => {});
+
+                    } else {
+
+                        (document.exitFullscreen ||
+                            document.webkitExitFullscreen)
+                            .call(document);
+
+                    }
+
+                });
+
+
+                document.addEventListener(
+                    "fullscreenchange",
+                    syncFullscreenState
+                );
+
+                document.addEventListener(
+                    "webkitfullscreenchange",
+                    syncFullscreenState
+                );
+
+            }
 
         }
 
