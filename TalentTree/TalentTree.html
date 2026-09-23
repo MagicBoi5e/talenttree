@@ -388,18 +388,166 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
         }
 
-        .level-panel {
-            width: 100px;
+        /* Level and Extra Points now live in a single combined
+           box, split into two "sections" separated by a thin
+           divider, with the points-spent readout and warning
+           beneath both. */
+
+        .level-extra-panel {
+            width: 136px;
 
             gap: 6px;
             padding: 8px 12px 0px 12px;
         }
 
-        .extra-panel {
-            width: 100px;
+        .panel-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            gap: 4px;
+
+            width: 100%;
+        }
+
+        .panel-section + .panel-section {
+            padding-top: 6px;
+
+            border-top: 1px solid #444;
+        }
+
+
+        /* =========================
+           RNG PANEL
+
+           Sits where the Extra Points box used to be. A dropdown
+           of loot/encounter categories (each with its own 1-N
+           range), a Roll/Reroll button, and 3 (4 in Expert mode)
+           result squares.
+           ========================= */
+
+        .rng-panel {
+            width: 144px;
 
             gap: 8px;
-            padding: 8px 12px 12px 12px;
+            padding: 10px 12px 12px 12px;
+        }
+
+        .rng-select {
+            width: 100%;
+
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            color: #ddd;
+
+            padding: 5px 4px;
+
+            background: linear-gradient(180deg, #3a3a3a, #262626);
+            border: 1px solid #555;
+            border-radius: 6px;
+
+            cursor: pointer;
+        }
+
+        .rng-select:hover,
+        .rng-select:focus {
+            border-color: #777;
+            outline: none;
+        }
+
+        .rng-roll-btn {
+            width: 100%;
+
+            padding: 6px 0;
+
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #ddd;
+
+            background: linear-gradient(180deg, #3a3a3a, #262626);
+            border: 1px solid #555;
+            border-radius: 6px;
+
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .rng-roll-btn:hover {
+            background: linear-gradient(180deg, #464646, #303030);
+            border-color: #777;
+        }
+
+        .rng-roll-btn:active {
+            background: linear-gradient(180deg, #2a2a2a, #1c1c1c);
+        }
+
+        .rng-roll-btn.reroll {
+            color: #fff;
+
+            background: linear-gradient(180deg, #3d9a4f, #1e5228);
+            border-color: #4caf50;
+
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+        }
+
+        .rng-roll-btn.reroll:hover {
+            background: linear-gradient(180deg, #46ab59, #256330);
+        }
+
+
+        .rng-squares {
+            display: flex;
+            flex-wrap: nowrap;
+            align-content: center;
+            justify-content: center;
+
+            gap: 4px;
+
+            width: 100%;
+        }
+
+        .rng-square {
+            width: 25px;
+            height: 25px;
+            flex: none;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 700;
+            color: #ddd;
+
+            background: linear-gradient(180deg, #3a3a3a, #262626);
+            border: 1px solid #555;
+            border-radius: 6px;
+
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+
+        .rng-square:hover {
+            border-color: #777;
+        }
+
+        .rng-square.empty {
+            color: #666;
+            cursor: default;
+        }
+
+        .rng-square.selected {
+            color: #fff;
+
+            background: linear-gradient(180deg, #3d9a4f, #1e5228);
+            border-color: #4caf50;
+
+            box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
         }
 
         .panel-label {
@@ -409,14 +557,8 @@
             color: #7fd4ff;
 
             text-align: center;
+            white-space: nowrap;
         }
-
-        .panel-label.two-line {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.25;
-        }
-
 
         /* Stepper: a number input flanked by +/- buttons,
            shared by the Level and Extra Points boxes. */
@@ -456,6 +598,40 @@
 
         .stepper-btn:active {
             background: linear-gradient(180deg, #2a2a2a, #1c1c1c);
+        }
+
+        /* Minus / plus steppers color-coded red/green. */
+
+        .stepper-btn[data-step="-1"] {
+            color: #fff;
+
+            background: linear-gradient(180deg, #b33333, #7a1f1f);
+            border-color: #ff5b5b;
+        }
+
+        .stepper-btn[data-step="-1"]:hover {
+            background: linear-gradient(180deg, #c23e3e, #8a2525);
+            border-color: #ff7b7b;
+        }
+
+        .stepper-btn[data-step="-1"]:active {
+            background: linear-gradient(180deg, #7a1f1f, #5c1717);
+        }
+
+        .stepper-btn[data-step="1"] {
+            color: #fff;
+
+            background: linear-gradient(180deg, #3d9a4f, #1e5228);
+            border-color: #4caf50;
+        }
+
+        .stepper-btn[data-step="1"]:hover {
+            background: linear-gradient(180deg, #46ab59, #256330);
+            border-color: #6fcf7f;
+        }
+
+        .stepper-btn[data-step="1"]:active {
+            background: linear-gradient(180deg, #1e5228, #163d1e);
         }
 
 
@@ -508,7 +684,7 @@
             width: 100%;
         }
 
-        .level-panel .points-count {
+        .level-extra-panel .points-count {
             padding-top: 3px;
             font-size: 10px;
             line-height: 1.2;
@@ -523,13 +699,11 @@
             font-weight: 600;
             color: #ff6b6b;
 
-            min-height: 14px;
             text-align: center;
         }
 
-        .level-panel .points-warning {
+        .level-extra-panel .points-warning {
             font-size: 8px;
-            min-height: 9px;
             line-height: 1.1;
         }
 
@@ -670,37 +844,72 @@
 
     <div class="talent-tree">
 
-        <div class="points-panel level-panel" id="levelPanel">
+        <div class="points-panel level-extra-panel" id="levelPanel">
 
-            <label for="levelInput" class="panel-label">Level</label>
+            <div class="panel-section">
 
-            <div class="stepper">
-                <button
-                    type="button"
-                    class="stepper-btn"
-                    data-target="levelInput"
-                    data-step="-1"
-                    aria-label="Decrease level">&minus;</button>
+                <label for="levelInput" class="panel-label">Level</label>
 
-                <input
-                    type="number"
-                    id="levelInput"
-                    class="points-input"
-                    min="1"
-                    max="20"
-                    value="1"
-                    step="1">
+                <div class="stepper">
+                    <button
+                        type="button"
+                        class="stepper-btn"
+                        data-target="levelInput"
+                        data-step="-1"
+                        aria-label="Decrease level">&minus;</button>
 
-                <button
-                    type="button"
-                    class="stepper-btn"
-                    data-target="levelInput"
-                    data-step="1"
-                    aria-label="Increase level">+</button>
+                    <input
+                        type="number"
+                        id="levelInput"
+                        class="points-input"
+                        min="1"
+                        max="20"
+                        value="1"
+                        step="1">
+
+                    <button
+                        type="button"
+                        class="stepper-btn"
+                        data-target="levelInput"
+                        data-step="1"
+                        aria-label="Increase level">+</button>
+                </div>
+
+            </div>
+
+            <div class="panel-section">
+
+                <label for="extraPointsInput" class="panel-label">Extra Points</label>
+
+                <div class="stepper">
+                    <button
+                        type="button"
+                        class="stepper-btn"
+                        data-target="extraPointsInput"
+                        data-step="-1"
+                        aria-label="Decrease extra points">&minus;</button>
+
+                    <input
+                        type="number"
+                        id="extraPointsInput"
+                        class="points-input"
+                        min="0"
+                        max="80"
+                        value="0"
+                        step="1">
+
+                    <button
+                        type="button"
+                        class="stepper-btn"
+                        data-target="extraPointsInput"
+                        data-step="1"
+                        aria-label="Increase extra points">+</button>
+                </div>
+
             </div>
 
             <div class="points-count" id="pointsCount">
-                0 / 0 points spent
+                0 / 0
             </div>
 
             <div class="points-warning" id="pointsWarning"></div>
@@ -708,37 +917,56 @@
         </div>
 
 
-        <div class="points-panel extra-panel" id="extraPanel">
+        <div class="points-panel rng-panel" id="rngPanel">
 
-            <label for="extraPointsInput" class="panel-label two-line">
-                <span>Extra</span>
-                <span>Points</span>
-            </label>
+            <label for="rngSelect" class="panel-label">RNG</label>
 
-            <div class="stepper">
-                <button
-                    type="button"
-                    class="stepper-btn"
-                    data-target="extraPointsInput"
-                    data-step="-1"
-                    aria-label="Decrease extra points">&minus;</button>
+            <select id="rngSelect" class="rng-select">
+                <option value="" selected>-Select Category-</option>
 
-                <input
-                    type="number"
-                    id="extraPointsInput"
-                    class="points-input"
-                    min="0"
-                    max="20"
-                    value="0"
-                    step="1">
+                <optgroup label="Magic Items">
+                    <option value="50">Uncommon Magic Items</option>
+                    <option value="72">Rare Magic Items</option>
+                    <option value="42">Very Rare Magic Items</option>
+                    <option value="36">Legendary Magic Items</option>
+                    <option value="7">Artifacts</option>
+                </optgroup>
 
-                <button
-                    type="button"
-                    class="stepper-btn"
-                    data-target="extraPointsInput"
-                    data-step="1"
-                    aria-label="Increase extra points">+</button>
-            </div>
+                <optgroup label="Character Options"></optgroup>
+                    <option value="22">Boons</option>
+                    <option value="56">Feats</option>
+                    <option value="13">Random Class</option>
+                </optgroup>
+
+                <optgroup label="Monsters"></optgroup>
+                    <option value="68">CR 1</option>
+                    <option value="112">CR 2</option>
+                    <option value="71">CR 3</option>
+                    <option value="48">CR 4</option>
+                    <option value="76">CR 5</option>
+                    <option value="42">CR 6</option>
+                    <option value="31">CR 7</option>
+                    <option value="42">CR 8</option>
+                    <option value="42">CR 9</option>
+                    <option value="23">CR 10</option>
+                    <option value="19">CR 11</option>
+                    <option value="17">CR 12</option>
+                    <option value="25">CR 13</option>
+                    <option value="16">CR 14</option>
+                    <option value="18">CR 15</option>
+                    <option value="12">CR 16</option>
+                    <option value="16">CR 17</option>
+                    <option value="10">CR 18</option>
+                    <option value="8">CR 19</option>
+                    <option value="8">CR 20</option>
+                </optgroup>
+            </select>
+
+            <button type="button" class="rng-roll-btn" id="rngRollBtn">
+                Roll
+            </button>
+
+            <div class="rng-squares" id="rngSquares"></div>
 
         </div>
 
@@ -2398,7 +2626,7 @@
                 selectedNodes.size;
 
             pointsCountEl.textContent =
-                spent + " / " + totalPoints + " points spent";
+                spent + " / " + totalPoints;
 
             pointsCountEl.classList.toggle(
                 "limit-reached",
@@ -2701,6 +2929,8 @@
                     expertMode
                 );
 
+                onExpertModeChanged();
+
             });
 
 
@@ -2851,8 +3081,10 @@
 
 
             /*
-                Level + Extra Points boxes: centered on their
-                columns, bottoms flush with the bottom of row 9.
+                Level/Extra box: a single combined box, centered
+                under column 10, bottom flush with the bottom of
+                row 9. The RNG box occupies the column 18 spot,
+                also flush with row 9.
             */
 
             const lastRowBottom =
@@ -2866,7 +3098,7 @@
             );
 
             alignBottomUnderColumn(
-                document.getElementById("extraPanel"),
+                document.getElementById("rngPanel"),
                 extraColumnNode,
                 lastRowBottom,
                 treeRect
@@ -2899,12 +3131,253 @@
 
 
         /* =========================================================
+           RNG BOX
+
+           A category dropdown (each option carries its own 1-N
+           range as its value), a Roll/Reroll button, and a row of
+           result squares - 3 normally, 4 in Expert mode. Rolled
+           values are unique across the whole set (no two squares
+           ever show the same number). Clicking a rolled square
+           marks it (green) to be rerolled on its own; with any
+           square marked, the button switches to "Reroll" and only
+           rerolls the marked squares, then clears the marks.
+           ========================================================= */
+
+        let rngValues = [];
+        let rngSelectedFlags = [];
+        let rngSelectEl = null;
+        let rngRollBtnEl = null;
+        let rngSquaresEl = null;
+
+
+        function rngSquareCount() {
+
+            return expertMode ? 4 : 3;
+
+        }
+
+
+        function renderRngSquares() {
+
+            if (!rngSquaresEl) {
+                return;
+            }
+
+            rngSquaresEl.innerHTML = "";
+
+            const count =
+                rngSquareCount();
+
+            for (let i = 0; i < count; i++) {
+
+                const square =
+                    document.createElement("div");
+
+                square.className = "rng-square";
+
+                const value =
+                    rngValues[i];
+
+                if (value === undefined || value === null) {
+
+                    square.classList.add("empty");
+                    square.textContent = "\u2013";
+
+                } else {
+
+                    square.textContent = value;
+
+                }
+
+                if (rngSelectedFlags[i]) {
+                    square.classList.add("selected");
+                }
+
+                square.addEventListener("click", () => {
+
+                    if (rngValues[i] === undefined ||
+                        rngValues[i] === null) {
+                        return;
+                    }
+
+                    rngSelectedFlags[i] = !rngSelectedFlags[i];
+
+                    renderRngSquares();
+                    updateRngRollButton();
+
+                });
+
+                rngSquaresEl.appendChild(square);
+
+            }
+
+        }
+
+
+        function updateRngRollButton() {
+
+            if (!rngRollBtnEl) {
+                return;
+            }
+
+            const anySelected =
+                rngSelectedFlags.some(Boolean);
+
+            rngRollBtnEl.textContent =
+                anySelected ? "Reroll" : "Roll";
+
+            rngRollBtnEl.classList.toggle(
+                "reroll",
+                anySelected
+            );
+
+        }
+
+
+        /*
+            Rolls fresh values for the given square indices, drawn
+            from 1..max, never colliding with each other or with
+            whatever is left in the squares that aren't being
+            rerolled.
+        */
+
+        function rollRngValues(indices) {
+
+            if (!rngSelectEl) {
+                return;
+            }
+
+            const max =
+                parseInt(rngSelectEl.value, 10);
+
+            if (!max || isNaN(max)) {
+                return;
+            }
+
+            const count =
+                rngSquareCount();
+
+            const used = new Set();
+
+            for (let i = 0; i < count; i++) {
+
+                if (!indices.includes(i) &&
+                    rngValues[i] !== undefined &&
+                    rngValues[i] !== null) {
+
+                    used.add(rngValues[i]);
+
+                }
+
+            }
+
+            indices.forEach(i => {
+
+                let value;
+                let attempts = 0;
+
+                do {
+
+                    value = Math.floor(Math.random() * max) + 1;
+                    attempts++;
+
+                } while (used.has(value) && attempts < 200);
+
+                used.add(value);
+                rngValues[i] = value;
+
+            });
+
+        }
+
+
+        function initRngPanel() {
+
+            rngSelectEl =
+                document.getElementById("rngSelect");
+
+            rngRollBtnEl =
+                document.getElementById("rngRollBtn");
+
+            rngSquaresEl =
+                document.getElementById("rngSquares");
+
+            if (!rngSelectEl || !rngRollBtnEl || !rngSquaresEl) {
+                return;
+            }
+
+            rngRollBtnEl.addEventListener("click", () => {
+
+                const count =
+                    rngSquareCount();
+
+                const anySelected =
+                    rngSelectedFlags.some(Boolean);
+
+                const indices = [];
+
+                for (let i = 0; i < count; i++) {
+
+                    if (!anySelected || rngSelectedFlags[i]) {
+                        indices.push(i);
+                    }
+
+                }
+
+                rollRngValues(indices);
+
+                rngSelectedFlags = new Array(count).fill(false);
+
+                renderRngSquares();
+                updateRngRollButton();
+
+            });
+
+            rngSelectEl.addEventListener("change", () => {
+
+                rngValues = [];
+                rngSelectedFlags = [];
+
+                renderRngSquares();
+                updateRngRollButton();
+
+            });
+
+            renderRngSquares();
+            updateRngRollButton();
+
+        }
+
+
+        /*
+            Called when Expert mode is toggled, since it changes
+            the RNG box from 3 squares to 4 (or back). Existing
+            rolled values are kept where possible; a newly added
+            4th square starts empty.
+        */
+
+        function onExpertModeChanged() {
+
+            const count =
+                rngSquareCount();
+
+            rngValues.length = count;
+            rngSelectedFlags.length = count;
+
+            renderRngSquares();
+            updateRngRollButton();
+
+        }
+
+
+        /* =========================================================
            START EVERYTHING
            ========================================================= */
 
         applyIcons();
         initPopups();
         initSelection();
+        initRngPanel();
 
 
         function refreshLayout() {
