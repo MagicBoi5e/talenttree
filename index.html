@@ -117,7 +117,7 @@
 
             cursor: pointer;
             pointer-events: auto;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
         }
 
         .node::before {
@@ -135,6 +135,10 @@
             background-size: var(--icon-size);
 
             pointer-events: none;
+        }
+
+        .node.locked {
+            filter: grayscale(1) brightness(0.55);
         }
 
         .node.selected {
@@ -2498,6 +2502,34 @@
 
 
         /*
+            Greys out every node that isn't currently selected and
+            isn't currently selectable (no eligible parent, no
+            points left, or - in Expert mode - no eligible child
+            either). Already-selected nodes and genuinely
+            selectable nodes stay in full color.
+        */
+
+        function updateNodeAvailability() {
+
+            document
+                .querySelectorAll(".node")
+                .forEach(node => {
+
+                    const isAvailable =
+                        selectedNodes.has(node) ||
+                        canSelectNode(node);
+
+                    node.classList.toggle(
+                        "locked",
+                        !isAvailable
+                    );
+
+                });
+
+        }
+
+
+        /*
             After any deselection, remove any selected node that is
             no longer connected back to a start node through a chain
             of other selected nodes (in either direction).
@@ -2632,6 +2664,8 @@
                 "limit-reached",
                 spent >= totalPoints
             );
+
+            updateNodeAvailability();
 
         }
 
@@ -3366,6 +3400,8 @@
 
             renderRngSquares();
             updateRngRollButton();
+
+            updateNodeAvailability();
 
         }
 
