@@ -45,6 +45,30 @@
             justify-content: center;
         }
 
+        /* Portrait fullscreen keeps the height-focused zoom, while allowing
+           the wider tree to be explored naturally with a sideways swipe. */
+        html.portrait-height-priority {
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        body.portrait-height-priority {
+            display: block;
+            overflow: visible;
+            overscroll-behavior-x: contain;
+            touch-action: pan-x;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        body.portrait-height-priority::-webkit-scrollbar {
+            display: none;
+        }
+
+        body.portrait-height-priority #stage {
+            transform-origin: top left;
+        }
+
 
         /* =========================
            STAGE
@@ -205,7 +229,7 @@
            ========================= */
 
         .popup {
-            display: grid;
+            display: none;
             grid-template-columns: 1fr auto;
             align-items: center;
             column-gap: 12px;
@@ -245,6 +269,7 @@
 
         .node:hover .popup,
         .node:focus-visible .popup {
+            display: grid;
             visibility: visible;
             opacity: 1;
         }
@@ -3516,6 +3541,7 @@
 
         let naturalStageWidth = null;
         let naturalStageHeight = null;
+        let portraitScrollActive = false;
 
 
         function applyStageScale() {
@@ -3547,15 +3573,76 @@
 
             const fitMargin = 0.98;
 
+            const viewport = window.visualViewport;
+            const viewportWidth = viewport ? viewport.width : window.innerWidth;
+            const viewportHeight = viewport ? viewport.height : window.innerHeight;
+            const fullscreenActive = Boolean(
+                document.fullscreenElement ||
+                document.webkitFullscreenElement
+            );
+            const standaloneActive =
+                window.matchMedia("(display-mode: standalone)").matches ||
+                window.navigator.standalone === true;
+            const portraitPhone =
+                viewportHeight > viewportWidth &&
+                Math.min(viewportWidth, viewportHeight) <= 600;
+
+            /* In portrait fullscreen, width-fitting makes the entire tree tiny.
+               Fit its height instead so the central portion remains readable;
+               landscape and normal browser views keep the original contain fit. */
             const scale =
-                Math.min(
-                    (window.innerWidth / naturalStageWidth),
-                    (window.innerHeight / naturalStageHeight)
-                ) * fitMargin;
+                portraitPhone && (fullscreenActive || standaloneActive)
+                    ? (viewportHeight / naturalStageHeight) * fitMargin
+                    : Math.min(
+                        viewportWidth / naturalStageWidth,
+                        viewportHeight / naturalStageHeight
+                    ) * fitMargin;
 
             currentStageScale = scale;
 
             stage.style.transform = "scale(" + scale + ")";
+            const usePortraitScroll =
+                portraitPhone && (fullscreenActive || standaloneActive);
+
+            document.body.classList.toggle(
+                "portrait-height-priority",
+                usePortraitScroll
+            );
+            document.documentElement.classList.toggle(
+                "portrait-height-priority",
+                usePortraitScroll
+            );
+
+            if (usePortraitScroll) {
+                const scaledWidth = naturalStageWidth * scale;
+                const scaledHeight = naturalStageHeight * scale;
+                /* Keep a small, matching gutter at both horizontal limits. */
+                const portraitSideGutter = 12;
+                document.body.style.width =
+                    scaledWidth + portraitSideGutter * 2 + "px";
+                stage.style.marginLeft = portraitSideGutter + "px";
+                stage.style.marginTop =
+                    Math.max(0, (viewportHeight - scaledHeight) / 2) + "px";
+
+                if (!portraitScrollActive) {
+                    requestAnimationFrame(() => {
+                        const scrollingElement = document.scrollingElement;
+                        if (scrollingElement) {
+                            scrollingElement.scrollLeft =
+                                (scrollingElement.scrollWidth - viewportWidth) / 2;
+                        }
+                    });
+                }
+            } else {
+                document.body.style.width = "";
+                stage.style.marginLeft = "";
+                stage.style.marginTop = "";
+                if (document.scrollingElement) {
+                    document.scrollingElement.scrollLeft = 0;
+                }
+            }
+
+            portraitScrollActive = usePortraitScroll;
 
         }
 
@@ -3588,6 +3675,13 @@
             "resize",
             refreshLayout
         );
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener(
+                "resize",
+                refreshLayout
+            );
+        }
 
 
         /*
@@ -3654,6 +3748,8 @@
                         "is-fullscreen",
                         Boolean(active)
                     );
+
+                    requestAnimationFrame(refreshLayout);
 
                 };
 
