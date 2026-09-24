@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#222222">
+    <title>Library &middot; The Arena of Champions</title>
+    <link rel="stylesheet" href="assets/site.css">
+</head>
+
+<body>
+
+    <header class="site-header">
+        <a class="back-link" href="index.html">&larr; Talent Tree</a>
+        <h1 class="site-title">Library</h1>
+        <a class="back-link" href="tools/encrypt.html">Encrypt &rarr;</a>
+    </header>
+
+    <main class="page">
+
+        <p class="page-intro">
+            The rulebooks are stored encrypted. Enter the password once and both
+            unlock for the rest of your visit.
+        </p>
+
+        <div class="book-grid">
+
+            <button class="book-card" type="button" data-book="arena"
+                data-file="assets/books/arena.pdf.enc"
+                data-filename="The Arena of Champions.pdf"
+                data-title="The Arena of Champions">
+                <img src="assets/covers/arena.jpg" alt="The Arena of Champions cover">
+                <span class="book-meta">
+                    <span class="book-name">The Arena of Champions</span>
+                    <span class="book-state" data-state>&#128274; Locked</span>
+                </span>
+            </button>
+
+            <button class="book-card" type="button" data-book="bestiary"
+                data-file="assets/books/bestiary.pdf.enc"
+                data-filename="TAoC Bestiary Compendium.pdf"
+                data-title="Bestiary Compendium">
+                <img src="assets/covers/bestiary.jpg" alt="Bestiary Compendium cover">
+                <span class="book-meta">
+                    <span class="book-name">Bestiary Compendium</span>
+                    <span class="book-state" data-state>&#128274; Locked</span>
+                </span>
+            </button>
+
+        </div>
+
+        <hr class="library-divider">
+
+        <h2 class="section-title">Monster Tokens</h2>
+
+        <p class="page-intro">
+            Monster tokens for virtual tabletops. Click any token to download it,
+            or grab the whole set as one zip.
+        </p>
+
+        <div class="token-toolbar">
+            <input class="token-search" id="tokenSearch" type="search"
+                placeholder="Search tokens&hellip;" autocomplete="off">
+            <span class="token-count" id="tokenCount"></span>
+            <button class="btn btn-primary" type="button" id="downloadAll">
+                Download all (.zip)
+            </button>
+        </div>
+
+        <div class="token-grid" id="tokenGrid"></div>
+
+        <p class="empty-note" id="emptyNote" hidden>
+            No tokens yet. Drop your token images into <code>assets/tokens/</code>
+            and list their filenames in <code>assets/tokens.json</code>.
+        </p>
+
+    </main>
+
+
+    <!-- Password prompt -->
+    <div class="overlay" id="passwordOverlay" hidden>
+        <form class="dialog" id="passwordForm">
+            <h2 class="dialog-title" id="passwordTitle">Enter password</h2>
+            <p class="dialog-text">This rulebook is encrypted. The password decrypts it in your browser.</p>
+            <input class="dialog-input" id="passwordInput" type="password" autocomplete="current-password"
+                placeholder="Password" required>
+            <p class="dialog-error" id="passwordError" hidden>Wrong password. Try again.</p>
+            <div class="dialog-actions">
+                <button class="btn btn-ghost" type="button" id="passwordCancel">Cancel</button>
+                <button class="btn btn-primary" type="submit" id="passwordSubmit">Unlock</button>
+            </div>
+        </form>
+    </div>
+
+
+    <!-- PDF viewer -->
+    <div class="viewer" id="viewer" hidden>
+        <div class="viewer-bar">
+            <span class="viewer-title" id="viewerTitle"></span>
+            <span class="viewer-actions">
+                <a class="btn btn-ghost" id="viewerDownload" download>Download</a>
+                <button class="btn btn-primary" type="button" id="viewerClose">Close</button>
+            </span>
+        </div>
+        <iframe class="viewer-frame" id="viewerFrame" title="Rulebook"></iframe>
+    </div>
+
+    <script src="assets/vault.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            const SESSION_KEY = "taoc-rulebook-password";
+
+            const overlay = document.getElementById("passwordOverlay");
+            const form = document.getElementById("passwordForm");
+            const input = document.getElementById("passwordInput");
+            const errorEl = document.getElementById("passwordError");
+            const submitBtn = document.getElementById("passwordSubmit");
+            const titleEl = document.getElementById("passwordTitle");
+
+            const viewer = document.getElementById("viewer");
+            const viewerFrame = document.getElementById("viewerFrame");
+            const viewerTitle = document.getElementById("viewerTitle");
+            const viewerDownload = document.getElementById("viewerDownload");
+
+            // Encrypted bytes are fetched once per book, then reused.
+            const encryptedCache = new Map();
+            // Object URLs for anything already decrypted this visit.
+            const openedBooks = new Map();
+
+            let pendingCard = null;
+
+            async function loadEncrypted(card) {
+                const url = card.dataset.file;
+                if (!encryptedCache.has(url)) {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error("Could not load " + url);
+                    encryptedCache.set(url, await response.arrayBuffer());
+                }
+                return encryptedCache.get(url);
+            }
+
+            async function unlock(card, password) {
+                const encrypted = await loadEncrypted(card);
+                const plain = await vaultDecrypt(password, encrypted);
+                const url = URL.createObjectURL(new Blob([plain], { type: "application/pdf" }));
+                openedBooks.set(card.dataset.book, url);
+                card.querySelector("[data-state]").textContent = "\u{1F513} Unlocked";
+                card.classList.add("is-unlocked");
+                return url;
+            }
+
+            function show(card, url) {
+                viewerTitle.textContent = card.dataset.title;
+                viewerDownload.href = url;
+                viewerDownload.setAttribute("download", card.dataset.filename);
+                viewerFrame.src = url;
+                viewer.hidden = false;
+                document.body.classList.add("no-scroll");
+            }
+
+            function askFor(card) {
+                pendingCard = card;
+                titleEl.textContent = "Unlock \u201C" + card.dataset.title + "\u201D";
+                errorEl.hidden = true;
+                input.value = "";
+                overlay.hidden = false;
+                input.focus();
+            }
+
+            document.querySelectorAll(".book-card").forEach(function (card) {
+                card.addEventListener("click", async function () {
+                    const already = openedBooks.get(card.dataset.book);
+                    if (already) { show(card, already); return; }
+
+                    // Already unlocked another book this visit? Reuse silently.
+                    const saved = sessionStorage.getItem(SESSION_KEY);
+                    if (saved) {
+                        card.classList.add("is-busy");
+                        try {
+                            show(card, await unlock(card, saved));
+                            return;
+                        } catch (err) {
+                            sessionStorage.removeItem(SESSION_KEY);
+                        } finally {
+                            card.classList.remove("is-busy");
+                        }
+                    }
+                    askFor(card);
+                });
+            });
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+                if (!pendingCard) return;
+
+                const password = input.value;
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Decrypting\u2026";
+                errorEl.hidden = true;
+
+                try {
+                    const url = await unlock(pendingCard, password);
+                    sessionStorage.setItem(SESSION_KEY, password);
+                    overlay.hidden = true;
+                    show(pendingCard, url);
+                    pendingCard = null;
+                } catch (err) {
+                    errorEl.hidden = false;
+                    input.select();
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Unlock";
+                }
+            });
+
+            document.getElementById("passwordCancel").addEventListener("click", function () {
+                overlay.hidden = true;
+                pendingCard = null;
+            });
+
+            document.getElementById("viewerClose").addEventListener("click", function () {
+                viewer.hidden = true;
+                viewerFrame.src = "about:blank";
+                document.body.classList.remove("no-scroll");
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key !== "Escape") return;
+                if (!viewer.hidden) document.getElementById("viewerClose").click();
+                else if (!overlay.hidden) document.getElementById("passwordCancel").click();
+            });
+        })();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            const grid = document.getElementById("tokenGrid");
+            const search = document.getElementById("tokenSearch");
+            const countEl = document.getElementById("tokenCount");
+            const emptyNote = document.getElementById("emptyNote");
+            const downloadAll = document.getElementById("downloadAll");
+
+            if (!grid) return;
+
+            let tokens = [];
+
+            function prettyName(file) {
+                return file
+                    .replace(/\.[a-z0-9]+$/i, "")
+                    .replace(/[_-]+/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            }
+
+            function render(filter) {
+                const needle = (filter || "").trim().toLowerCase();
+                const shown = tokens.filter(function (t) {
+                    return !needle || t.name.toLowerCase().includes(needle);
+                });
+
+                grid.innerHTML = "";
+                shown.forEach(function (t) {
+                    const a = document.createElement("a");
+                    a.className = "token";
+                    a.href = t.url;
+                    a.download = t.file;
+                    a.title = "Download " + t.name;
+
+                    const img = document.createElement("img");
+                    img.src = t.url;
+                    img.alt = t.name;
+                    img.loading = "lazy";
+
+                    const label = document.createElement("span");
+                    label.className = "token-name";
+                    label.textContent = t.name;
+
+                    a.append(img, label);
+                    grid.append(a);
+                });
+
+                countEl.textContent = shown.length + " of " + tokens.length + " tokens";
+            }
+
+            downloadAll.addEventListener("click", async function () {
+                if (!tokens.length) return;
+                downloadAll.disabled = true;
+                downloadAll.textContent = "Zipping\u2026";
+                try {
+                    const zip = new JSZip();
+                    for (const t of tokens) {
+                        const response = await fetch(t.url);
+                        zip.file(t.path, await response.blob());
+                    }
+                    const blob = await zip.generateAsync({ type: "blob" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = "TAoC-monster-tokens.zip";
+                    link.click();
+                    setTimeout(function () { URL.revokeObjectURL(link.href); }, 10000);
+                } finally {
+                    downloadAll.disabled = false;
+                    downloadAll.textContent = "Download all (.zip)";
+                }
+            });
+
+            search.addEventListener("input", function () { render(search.value); });
+
+            fetch("assets/tokens.json")
+                .then(function (r) { return r.ok ? r.json() : { tokens: [] }; })
+                .catch(function () { return { tokens: [] }; })
+                .then(function (data) {
+                    const list = Array.isArray(data) ? data : (data.tokens || []);
+                    tokens = list.map(function (entry) {
+                        const path = typeof entry === "string" ? entry : entry.file;
+                        const parts = path.split("/");
+                        const base = parts[parts.length - 1];
+                        const name = (typeof entry === "object" && entry.name) || prettyName(base);
+                        return {
+                            file: base,
+                            path: path,
+                            name: name + (parts.length > 1 ? " \u2014 " + parts.slice(0, -1).join(" / ") : ""),
+                            url: "assets/tokens/" + parts.map(encodeURIComponent).join("/")
+                        };
+                    });
+
+                    if (!tokens.length) {
+                        emptyNote.hidden = false;
+                        downloadAll.disabled = true;
+                        countEl.textContent = "";
+                        return;
+                    }
+                    render("");
+                });
+        })();
+    </script>
+
+</body>
+
+</html>
