@@ -43,6 +43,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
+
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         }
 
         /* Portrait fullscreen keeps the height-focused zoom, while allowing
@@ -268,10 +270,16 @@
         }
 
         .node:hover .popup,
-        .node:focus-visible .popup {
+        .node:focus-visible .popup,
+        .node.popup-held .popup {
             display: grid;
             visibility: visible;
             opacity: 1;
+        }
+
+        /* Long-press on touch: keep node above siblings like :hover */
+        .node.popup-held {
+            z-index: 50;
         }
 
         .popup h1 {
@@ -2170,6 +2178,95 @@
 
                     node.addEventListener("mouseenter", show);
                     node.addEventListener("focus", show);
+
+                    /*
+                        Touch long-press: hold a finger on a node
+                        for ~500ms to peek at its popup without
+                        spending a point. Moving the finger cancels,
+                        releasing hides the popup and swallows the
+                        click so the node isn't toggled.
+                    */
+
+                    let holdTimer = null;
+                    let holdFired = false;
+
+                    node.addEventListener("touchstart", event => {
+
+                        holdFired = false;
+
+                        const startTouch = event.touches[0];
+                        const startX = startTouch.clientX;
+                        const startY = startTouch.clientY;
+
+                        const cancelOnMove = moveEvent => {
+
+                            const t = moveEvent.touches[0];
+
+                            if (
+                                Math.hypot(
+                                    t.clientX - startX,
+                                    t.clientY - startY
+                                ) > 10
+                            ) {
+                                if (holdTimer) {
+                                    clearTimeout(holdTimer);
+                                    holdTimer = null;
+                                }
+                            }
+
+                        };
+
+                        const finish = () => {
+
+                            if (holdTimer) {
+                                clearTimeout(holdTimer);
+                                holdTimer = null;
+                            }
+
+                            node.removeEventListener(
+                                "touchmove", cancelOnMove
+                            );
+
+                            /* Brief delay so the popup doesn't
+                               vanish before the click is swallowed */
+                            setTimeout(
+                                () => node.classList.remove("popup-held"),
+                                150
+                            );
+
+                        };
+
+                        node.addEventListener(
+                            "touchmove", cancelOnMove, { passive: true }
+                        );
+                        node.addEventListener(
+                            "touchend", finish, { once: true }
+                        );
+                        node.addEventListener(
+                            "touchcancel", finish, { once: true }
+                        );
+
+                        holdTimer = setTimeout(() => {
+
+                            holdTimer = null;
+                            holdFired = true;
+
+                            node.classList.add("popup-held");
+                            show();
+
+                        }, 500);
+
+                    }, { passive: true });
+
+                    node.addEventListener("click", event => {
+
+                        if (holdFired) {
+                            holdFired = false;
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+
+                    }, true);
 
                 });
 
